@@ -17,11 +17,6 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
-# ARENA: lightsfm is a source package under src/deps/lightsfm (Social-Nav fork),
-# not a `make install`ed blob in /usr/local/include. Upstream relied on that
-# path, which lives inside the container image rather than a bind mount, so
-# edits to sfm.hpp were silently reverted by every --force-recreate. Depending
-# on the package instead means the headers rebuild from source like any other dep.
 find_package(lightsfm REQUIRED)
 
 
