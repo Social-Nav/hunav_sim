@@ -17,11 +17,17 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav2_behavior_tree REQUIRED)
 find_package(behaviortree_cpp REQUIRED)
+# ARENA: lightsfm is a source package under src/deps/lightsfm (Social-Nav fork),
+# not a `make install`ed blob in /usr/local/include. Upstream relied on that
+# path, which lives inside the container image rather than a bind mount, so
+# edits to sfm.hpp were silently reverted by every --force-recreate. Depending
+# on the package instead means the headers rebuild from source like any other dep.
+find_package(lightsfm REQUIRED)
 
 
 include_directories(
   include
-  /usr/local/include #to find lightsfm just in case
+  ${lightsfm_INCLUDE_DIRS}
 )
 
 add_executable(hunav_agent_manager src/agent_manager_node.cpp src/agent_say_node.cpp src/agent_manager.cpp src/time_expired_condition.cpp src/conversation_formation_node.cpp src/stop_and_wait_timer_action_node.cpp src/go_to_node.cpp src/follow_velocity_field_node.cpp src/approach_agent_node.cpp src/approach_robot_node.cpp src/block_agent_node.cpp src/block_robot_node.cpp src/group_walk_node.cpp src/is_anyone_speaking_node.cpp src/is_speaking_node.cpp src/is_anyone_looking_at_me_node.cpp src/is_looking_at_me_node.cpp src/follow_agent_node.cpp src/look_at_point_node.cpp src/look_at_agent_node.cpp src/look_at_robot_node.cpp src/time_delay_decorator.cpp src/bt_functions.cpp src/bt_node.cpp)
