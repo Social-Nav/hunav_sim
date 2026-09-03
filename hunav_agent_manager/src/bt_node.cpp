@@ -249,6 +249,16 @@ namespace hunav
     blackboard->set<int>("id", (int)_agent.id);
     blackboard->set<double>("dt", 0.0);
 
+    // Seed blackboard keys required by non-Regular BTs (Surprised/Scared/Curious/Threatening).
+    // Without these, createTreeFromFile throws when encountering undefined {duration}/{dist}/etc keys.
+    blackboard->set<double>("duration",    _agent.behavior.duration);
+    blackboard->set<bool>  ("once",        _agent.behavior.once);
+    blackboard->set<double>("dist",        _agent.behavior.dist);
+    blackboard->set<double>("maxvel",      _agent.behavior.vel);
+    blackboard->set<double>("stopdist",    _agent.behavior.dist);     // Curious reuses dist for stop_distance
+    blackboard->set<double>("forcefactor", _agent.behavior.social_force_factor);
+    blackboard->set<double>("frontdist",   _agent.behavior.dist);     // Threatening reuses dist for goal_dist
+
     const std::string fname = _agent.behavior_tree != "" ? _agent.behavior_tree : yaml_base_name_ + "__agent_" + std::to_string(_agent.id) + "_bt.xml";
     RCLCPP_ERROR(this->get_logger(), "Behavior tree file for agent %i: %s from %s", _agent.id, fname.c_str(), _agent.behavior_tree.c_str());
 

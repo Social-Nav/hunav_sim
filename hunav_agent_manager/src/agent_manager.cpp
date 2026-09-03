@@ -1052,6 +1052,10 @@ hunav_msgs::msg::Agent AgentManager::getUpdatedAgentMsg(int id)
   a.position.orientation = tf2::toMsg(myQuaternion);
   a.linear_vel = agents_[id].sfmAgent.linearVelocity;
   a.angular_vel = agents_[id].sfmAgent.angularVelocity;
+  // Echoed back so consumers can rate-limit against the configured speed. Left unset
+  // upstream, it reached Arena as 0.0 and scaled every pedestrian velocity to zero.
+  a.desired_velocity = agents_[id].sfmAgent.desiredVelocity;
+  a.radius = agents_[id].sfmAgent.radius;
   a.velocity.linear.x = agents_[id].sfmAgent.velocity.getX();
   a.velocity.linear.y = agents_[id].sfmAgent.velocity.getY();
   a.velocity.angular.z = agents_[id].sfmAgent.angularVelocity;
