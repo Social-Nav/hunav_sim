@@ -20,8 +20,10 @@ hunav_msgs/AgentBehavior behavior
 string behavior_tree
 
 geometry_msgs/Pose[] goals
+# Desired speed for the segment ending at each corresponding goal. Empty or missing
+# entries fall back to desired_velocity for backward compatibility.
+float32[] goal_desired_velocities
 bool cyclic_goals
 float32 goal_radius
 
 geometry_msgs/Point[] closest_obs
-
