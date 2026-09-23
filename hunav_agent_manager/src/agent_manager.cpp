@@ -841,11 +841,30 @@ bool AgentManager::updateGoal(int id)
   std::lock_guard<std::mutex> guard(mutex_);
 
   // printf("Updating goal for agent %i\n\n", id);
+  if (agents_[id].sfmAgent.goals.empty())
+  {
+    return false;
+  }
   sfm::Goal g = agents_[id].sfmAgent.goals.front();
   agents_[id].sfmAgent.goals.pop_front();
+  double goal_velocity = orig_desired_vels_[id];
+  if (!agents_[id].goalDesiredVelocities.empty())
+  {
+    goal_velocity = agents_[id].goalDesiredVelocities.front();
+    agents_[id].goalDesiredVelocities.pop_front();
+  }
   if (agents_[id].sfmAgent.cyclicGoals)
   {
     agents_[id].sfmAgent.goals.push_back(g);
+    agents_[id].goalDesiredVelocities.push_back(goal_velocity);
+  }
+  if (!agents_[id].sfmAgent.goals.empty() &&
+      !agents_[id].goalDesiredVelocities.empty())
+  {
+    const double next_velocity = agents_[id].goalDesiredVelocities.front();
+    agents_[id].sfmAgent.desiredVelocity = next_velocity;
+    // Interaction behaviors restore this value when they finish.
+    orig_desired_vels_[id] = next_velocity;
   }
   return true;
 }
@@ -873,7 +892,6 @@ void AgentManager::initializeAgents(const hunav_msgs::msg::Agents::SharedPtr msg
     ag.sfmAgent.id = a.id;
     ag.sfmAgent.groupId = a.group_id;
     ag.sfmAgent.desiredVelocity = a.desired_velocity;
-    orig_desired_vels_[ag.sfmAgent.id] = a.desired_velocity;
     ag.sfmAgent.radius = a.radius;
     ag.sfmAgent.cyclicGoals = a.cyclic_goals;
     ag.sfmAgent.position.set(a.position.position.x, a.position.position.y);
@@ -882,14 +900,25 @@ void AgentManager::initializeAgents(const hunav_msgs::msg::Agents::SharedPtr msg
     ag.sfmAgent.linearVelocity =
         sqrt(a.velocity.linear.x * a.velocity.linear.x + a.velocity.linear.y * a.velocity.linear.y);
     ag.sfmAgent.angularVelocity = a.velocity.angular.z;
-    for (auto g : a.goals)
+    for (size_t goal_index = 0; goal_index < a.goals.size(); ++goal_index)
     {
+      const auto & g = a.goals[goal_index];
       sfm::Goal sfmg;
       sfmg.center.setX(g.position.x);
       sfmg.center.setY(g.position.y);
       sfmg.radius = a.goal_radius;
       ag.sfmAgent.goals.push_back(sfmg);
+      const double segment_velocity =
+        goal_index < a.goal_desired_velocities.size() &&
+        a.goal_desired_velocities[goal_index] > 0.0 ?
+        a.goal_desired_velocities[goal_index] : a.desired_velocity;
+      ag.goalDesiredVelocities.push_back(segment_velocity);
     }
+    if (!ag.goalDesiredVelocities.empty())
+    {
+      ag.sfmAgent.desiredVelocity = ag.goalDesiredVelocities.front();
+    }
+    orig_desired_vels_[ag.sfmAgent.id] = ag.sfmAgent.desiredVelocity;
     ag.sfmAgent.obstacles1.clear();
     if (!a.closest_obs.empty())
     {
@@ -1078,6 +1107,10 @@ hunav_msgs::msg::Agent AgentManager::getUpdatedAgentMsg(int id)
     p.position.x = g.center.getX();
     p.position.y = g.center.getY();
     a.goals.push_back(p);
+  }
+  for (double velocity : agents_[id].goalDesiredVelocities)
+  {
+    a.goal_desired_velocities.push_back(velocity);
   }
 
   //(agents[i].goals.front().center - agents[i].position).norm() <=

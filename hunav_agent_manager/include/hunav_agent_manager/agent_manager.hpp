@@ -61,6 +61,9 @@ struct agent
   // int behavior_state;
   agentBehavior behavior;
   sfm::Agent sfmAgent;
+  // Kept in lockstep with sfmAgent.goals. Each value controls the segment ending at
+  // the corresponding goal; cyclic routes rotate both queues together.
+  std::list<double> goalDesiredVelocities;
 };
 
 class AgentManager
