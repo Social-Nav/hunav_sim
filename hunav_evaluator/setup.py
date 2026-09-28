@@ -21,7 +21,6 @@ setup(
     maintainer_email='noeperez@upo.es',
     description='This package collects the data of the hunav simulations and computes different metrics',
     license='Apache-2.0',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
             'hunav_evaluator_node = hunav_evaluator.hunav_evaluator_node:main'
