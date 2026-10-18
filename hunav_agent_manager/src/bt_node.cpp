@@ -217,6 +217,7 @@ namespace hunav
     factory_.registerNodeType<hunav::StopAndWaitTimerActionNode>("StopAndWaitTimerAction");
     factory_.registerNodeType<hunav::ConversationFormationNode>("ConversationFormation");
     factory_.registerNodeType<hunav::GoToNode>("GoTo");
+    factory_.registerNodeType<hunav::FollowVelocityFieldNode>("FollowVelocityField");
     factory_.registerNodeType<hunav::ApproachAgentNode>("ApproachAgent");
     factory_.registerNodeType<hunav::FollowAgentNode>("FollowAgent");
     factory_.registerNodeType<hunav::ApproachRobotNode>("ApproachRobot");
@@ -247,6 +248,18 @@ namespace hunav
     BT::Blackboard::Ptr blackboard = BT::Blackboard::create();
     blackboard->set<int>("id", (int)_agent.id);
     blackboard->set<double>("dt", 0.0);
+    // Keys required by BTScaredNav / BTSurprisedNav / BTCuriousNav / BTThreateningNav.
+    // Without these, IsRobotVisible(distance="{dist}") throws and kills the agent manager,
+    // leaving pedestrians frozen (seen on grscenes_5 default scenarios).
+    const auto & beh = _agent.behavior;
+    blackboard->set<double>("dist", static_cast<double>(beh.dist));
+    blackboard->set<double>("duration", static_cast<double>(beh.duration));
+    blackboard->set<bool>("once", beh.once);
+    blackboard->set<double>("maxvel", static_cast<double>(beh.vel));
+    blackboard->set<double>("forcefactor", static_cast<double>(beh.social_force_factor));
+    // CuriousNav stop_distance / ThreateningNav goal_dist also read these aliases.
+    blackboard->set<double>("stopdist", static_cast<double>(beh.dist));
+    blackboard->set<double>("frontdist", static_cast<double>(beh.dist));
 
     const std::string fname = _agent.behavior_tree != "" ? _agent.behavior_tree : yaml_base_name_ + "__agent_" + std::to_string(_agent.id) + "_bt.xml";
     RCLCPP_ERROR(this->get_logger(), "Behavior tree file for agent %i: %s from %s", _agent.id, fname.c_str(), _agent.behavior_tree.c_str());
