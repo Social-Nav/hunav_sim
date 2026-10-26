@@ -866,7 +866,28 @@ bool AgentManager::updateGoal(int id)
     // Interaction behaviors restore this value when they finish.
     orig_desired_vels_[id] = next_velocity;
   }
+  else if (!agents_[id].sfmAgent.cyclicGoals)
+  {
+    stopAgentAtRouteEnd(id);
+  }
   return true;
+}
+
+void AgentManager::stopAgentAtRouteEnd(int id)
+{
+  auto & agent = agents_[id].sfmAgent;
+  orig_desired_vels_[id] = 0.0;
+  agents_[id].goalDesiredVelocities.clear();
+  agent.desiredVelocity = 0.0;
+  agent.velocity.set(0.0, 0.0);
+  agent.linearVelocity = 0.0;
+  agent.angularVelocity = 0.0;
+  agent.forces.desiredForce.set(0.0, 0.0);
+  agent.forces.socialForce.set(0.0, 0.0);
+  agent.forces.obstacleForce.set(0.0, 0.0);
+  agent.forces.groupForce.set(0.0, 0.0);
+  agent.forces.globalForce.set(0.0, 0.0);
+  agents_[id].behavior.state = 0;
 }
 
 void AgentManager::initializeAgents(const hunav_msgs::msg::Agents::SharedPtr msg)
@@ -1153,6 +1174,12 @@ std::vector<sfm::Agent> AgentManager::getSFMAgents()
 
 void AgentManager::computeForces(int id)
 {
+  if (!agents_[id].sfmAgent.cyclicGoals && agents_[id].sfmAgent.goals.empty())
+  {
+    stopAgentAtRouteEnd(id);
+    return;
+  }
+
   std::vector<sfm::Agent> otherAgents = getSFMAgents();
 
   utils::Vector2d ob;
@@ -1370,6 +1397,12 @@ bool AgentManager::canCompute()
 void AgentManager::updatePosition(int id, double dt)
 {
   std::lock_guard<std::mutex> guard(mutex_);
+
+  if (!agents_[id].sfmAgent.cyclicGoals && agents_[id].sfmAgent.goals.empty())
+  {
+    stopAgentAtRouteEnd(id);
+    return;
+  }
 
   agents_[id].behavior.state = 0;
 

@@ -406,9 +406,14 @@ namespace hunav
       publish_people(t, ag);
 
     double time_step_secs = (rclcpp::Time(ag->header.stamp) - prev_time_).seconds();
-    // if the time was reset, we get a negative value
+    // ComputeAgents normally runs at 10 Hz. During scene/motion hold no requests are sent,
+    // although Isaac simulation time may keep advancing while Nav2 prepares the yielding
+    // plan. Never integrate that whole gap in one BT tick: it expires a Surprised timer
+    // immediately and lets RegularNav move an agent several metres through the robot.
     if (time_step_secs < 0.0)
-      time_step_secs = 0.0; // 0.05
+      time_step_secs = 0.0;
+    else if (time_step_secs > 0.1)
+      time_step_secs = 0.1;
 
     BT::NodeStatus status = tree_tick(time_step_secs);
     prev_time_ = rclcpp::Time(ag->header.stamp);
@@ -469,7 +474,10 @@ namespace hunav
       publish_people(t, ag);
 
     double time_step_secs = (rclcpp::Time(ag->header.stamp) - prev_time_).seconds();
-    // time_step_secs = 0.1;
+    if (time_step_secs < 0.0)
+      time_step_secs = 0.0;
+    else if (time_step_secs > 0.1)
+      time_step_secs = 0.1;
 
     // RCLCPP_INFO(this->get_logger(), "Time step computed: %.4f",
     // time_step_secs);

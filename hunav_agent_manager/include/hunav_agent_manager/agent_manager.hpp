@@ -267,6 +267,9 @@ public:
   int step_count2;
   bool move;
 
+  /** Keep a non-cyclic agent stationary after its final goal is consumed. */
+  void stopAgentAtRouteEnd(int id);
+
   inline double normalizeAngle(double a)
   {
     double value = a;
